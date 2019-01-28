@@ -5,9 +5,9 @@
   tasks:
     - name: update s3 code bucket
       command: aws s3 sync /var/www/html s3://{{ s3code }}/ --delete
-    - shell: echo "define('WP_SITEURL', 'http://dev."{{ domain }}".net');" >> wp-config.php
+    - shell: echo "define('WP_SITEURL', 'http://dev.tf."{{ domain }}".net');" >> wp-config.php
       args:
         chdir: /var/www/html
-    - shell: echo "devin('WP_HOME', 'http://dev."{{ domain }}".net');" >> wp-config.php
+    - shell: echo "devin('WP_HOME', 'http://dev.tf."{{ domain }}".net');" >> wp-config.php
       args:
         chdir: /var/www/html

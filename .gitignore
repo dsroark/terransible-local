@@ -2,3 +2,4 @@
 .terraform
 *.retry
 aws_hosts
+*.tfstate*

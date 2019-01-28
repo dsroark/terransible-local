@@ -280,6 +280,7 @@ resource "aws_security_group" "wp_public_sg" {
 resource "aws_security_group" "wp_private_sg" {
   name        = "wp_private_sg"
   description = "Used for the private subnet for the ec2 ASG"
+  vpc_id      = "${aws_vpc.wp_vpc.id}"
 
   ingress {
     from_port   = 0
@@ -362,7 +363,7 @@ resource "aws_s3_bucket" "code" {
 resource "aws_db_instance" "wp_db" {
   allocated_storage = 10
   engine            = "mysql"
-  engine_version    = "5.6.27"
+  engine_version    = "5.6.41"
 
   instance_class         = "${var.db_instance_class}"
   name                   = "${var.dbname}"
@@ -403,7 +404,7 @@ resource "aws_instance" "wp_dev" {
 
   provisioner "local-exec" {
     command = <<EOD
-cat <<EOF > aws-hosts
+cat <<EOF > aws_hosts
 [dev]
 ${aws_instance.wp_dev.public_ip}
 [dev:vars]
@@ -498,7 +499,7 @@ resource "aws_launch_configuration" "wp_lc" {
 # --- ASG ---
 
 resource "aws_autoscaling_group" "wp_asg" {
-  name                      = "asg-${aws_launch_configuration.wp_lc.id}"
+  name                      = "asg-${aws_launch_configuration.wp_lc.name}"
   max_size                  = "${var.asg_max}"
   min_size                  = "${var.asg_min}"
   health_check_grace_period = "${var.asg_grace}"
@@ -533,7 +534,7 @@ resource "aws_autoscaling_group" "wp_asg" {
 # Public zone
 
 resource "aws_route53_zone" "primary" {
-  name              = "${var.domain_name}.net"
+  name              = "tf.${var.domain_name}.net"
   delegation_set_id = "${var.delegation_set}"
 }
 
@@ -541,7 +542,7 @@ resource "aws_route53_zone" "primary" {
 
 resource "aws_route53_record" "www" {
   zone_id = "${aws_route53_zone.primary.zone_id}"
-  name    = "www.${var.domain_name}.net"
+  name    = "www.tf.${var.domain_name}.net"
   type    = "A"
 
   alias {
@@ -555,7 +556,7 @@ resource "aws_route53_record" "www" {
 
 resource "aws_route53_record" "dev" {
   zone_id = "${aws_route53_zone.primary.zone_id}"
-  name    = "dev.${var.domain_name}.net"
+  name    = "dev.tf.${var.domain_name}.net"
   type    = "A"
   ttl     = "300"
   records = ["${aws_instance.wp_dev.public_ip}"]
@@ -564,7 +565,7 @@ resource "aws_route53_record" "dev" {
 # Private Zone
 
 resource "aws_route53_zone" "secondary" {
-  name   = "${var.domain_name}.net"
+  name   = "tf.${var.domain_name}.net"
   vpc_id = "${aws_vpc.wp_vpc.id}"
 }
 
@@ -572,7 +573,7 @@ resource "aws_route53_zone" "secondary" {
 
 resource "aws_route53_record" "db" {
   zone_id = "${aws_route53_zone.secondary.zone_id}"
-  name    = "db.${var.domain_name}.net"
+  name    = "db.tf.${var.domain_name}.net"
   type    = "CNAME"
   ttl     = "300"
   records = ["${aws_db_instance.wp_db.address}"]
